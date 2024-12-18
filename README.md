@@ -68,6 +68,80 @@ if __name__ == "__main__":
     create_test_registry_key()
 ```
 
+## Script Explanation
+
+### 1. Main Function: `update_registry_paths`
+- **Purpose:** Takes two inputs:
+  - `old_path`: The file path to search for in the registry.
+  - `new_path`: The file path to replace the `old_path`.
+- **Returns:** A list of registry keys and values that were updated.
+
+### 2. Nested Function: `search_and_replace_key`
+This recursive function is responsible for:
+1. **Opening a Registry Key:**
+   - Uses `winreg.OpenKey` to access a specific registry key.
+   - Opens the key with read and write permissions (`KEY_READ | KEY_WRITE`).
+
+2. **Scanning Values in the Key:**
+   - Uses `winreg.EnumValue` in a loop to iterate through all values in the key:
+     - Retrieves the name, data, and type of each value.
+     - If the data contains the `old_path` and is a string, it replaces the `old_path` with `new_path`.
+     - Updates the value in the registry using `winreg.SetValueEx`.
+     - Logs the updated key in the `updated_keys` list.
+
+3. **Recursively Processing Subkeys:**
+   - Uses `winreg.EnumKey` in a loop to iterate through all subkeys.
+   - Constructs the full path to each subkey and recursively calls `search_and_replace_key` on it.
+   - Continues until all subkeys have been processed.
+
+4. **Error Handling:**
+   - Catches `OSError` to handle the end of enumeration gracefully.
+   - Handles `FileNotFoundError` to skip missing or inaccessible keys.
+
+### 3. Registry Hives:
+The script processes five main registry hives:
+- `HKEY_LOCAL_MACHINE`: Configuration data for the system.
+- `HKEY_CURRENT_USER`: Settings for the currently logged-in user.
+- `HKEY_CLASSES_ROOT`: Information about file associations and COM objects.
+- `HKEY_USERS`: Settings for all user profiles on the machine.
+- `HKEY_CURRENT_CONFIG`: Settings for the current hardware profile.
+
+### 4. Main Execution Block (`if __name__ == "__main__":`)
+- **User Input:**
+  - Prompts the user to enter the `old_path` and `new_path`.
+  - Strips extra whitespace from the input.
+
+- **Calling `update_registry_paths`:**
+  - Prints a message indicating that the update process is starting.
+  - Calls `update_registry_paths` with the input paths.
+
+- **Output Results:**
+  - If updates are made, it lists the registry locations that were modified.
+  - If no changes are detected, it informs the user that no updates were made.
+
+### 5. Core Registry Operations:
+- **Enumerating Values:**
+   - The script inspects all values (name-data pairs) within each registry key for matches to the `old_path`.
+
+- **Recursive Subkey Traversal:**
+   - After processing the current key's values, it moves to its subkeys, ensuring a thorough search of the entire registry tree.
+
+### 6. Safety Features:
+- **Error Handling:** Ensures the script doesn’t crash if it encounters inaccessible keys or permissions issues.
+- **Non-Destructive Behavior:** Only modifies values containing the exact `old_path`.
+- **Administrative Privileges:** Requires elevated permissions to make registry changes.
+
+### 7. How to Test the Script:
+The script can be tested safely by creating a dummy registry key with test data, as outlined in the README. This ensures no critical parts of the registry are affected during testing.
+
+### Output:
+- A summary of all updated registry locations is printed in the format:
+  ```
+  Hive: <Hive>, Key: <Registry Key>, Value: <Value Name>
+  ```
+
+This script is a robust way to bulk-update file paths in the Windows registry, especially useful during migrations or configuration changes. It ensures comprehensive coverage of the registry while handling potential errors gracefully.
+
 ## Notes
 - Always **back up the registry** before running the script to avoid unintended changes.
 - Use this script only in controlled environments or after thorough testing.
